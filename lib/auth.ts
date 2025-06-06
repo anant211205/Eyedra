@@ -35,7 +35,12 @@ export const authOptions : NextAuthOptions = {
                     if(!isPasswordCorrect){
                         throw new Error("Incorrect password");
                     }
-                    return user;
+                    return {
+                            _id: user._id.toString(),
+                            email: user.email,
+                            username: user.username,
+                            avatar: user.avatar || "",
+                        };
 
                 }catch(error:any){
                     console.error("Error in authorize:", error);
@@ -50,6 +55,7 @@ export const authOptions : NextAuthOptions = {
                 session.user._id = token._id;
                 session.user.email = token.email;
                 session.user.username = token.username;
+                session.user.avatar = token.avatar;
             }
             return session;
         },
@@ -59,6 +65,7 @@ export const authOptions : NextAuthOptions = {
                 token._id = user._id;
                 token.email = user.email;
                 token.username = user.username;
+                token.avatar = user.avatar;
             }
             return token;
         },
