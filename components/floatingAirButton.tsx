@@ -34,7 +34,7 @@ export default function FloatingActionButtons(){
                     onMouseLeave={() => setHover(false)}
                     onClick={() => setOpenModal(true)}
                     sx={{
-                        width: hover ? "130px" : "56px",
+                        width: hover ? "138px" : "56px",
                         justifyContent: hover ? "flex-start" : "center",
                     }}
                 >
