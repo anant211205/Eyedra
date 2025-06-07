@@ -7,46 +7,54 @@ import bcrypt from "bcryptjs";
 export const authOptions : NextAuthOptions = {
     providers: [
         CredentialsProvider({
+            id: "credentials",
             name: "Credentials",
             credentials: {
-                email :{
-                    label : "Email" , type: "text" ,
+                identifier:{
+                    label: "Email or Username", 
+                    type: "text",
                 },
                 password: {
                     label: "Password" , type: "password",
                 }
             },
-            async authorize(credentials : any): Promise<any> {
-                await connectToDatabase() ;
-                try{
+            async authorize(credentials: any): Promise<any> {
+                await connectToDatabase();
+
+                const identifier = credentials.identifier;
+                const password = credentials.password;
+
+                try {
                     const user = await User.findOne({
-                        $or:[
-                            {email : credentials.identifier},
-                            {username : credentials.identifier}
+                        $or: [
+                            { email: identifier },
+                            { username: identifier }
                         ]
                     });
 
-                    if(!user){
-                        throw new Error("No user found with this email");
+                    if (!user) {
+                        return null
                     }
 
-                    const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
+                    const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
-                    if(!isPasswordCorrect){
-                        throw new Error("Incorrect password");
+                    if (!isPasswordCorrect) {
+                        return null
                     }
+
                     return {
-                            _id: user._id.toString(),
-                            email: user.email,
-                            username: user.username,
-                            avatar: user.avatar || "",
-                        };
+                        _id: user._id.toString(),
+                        email: user.email,
+                        username: user.username,
+                        avatar: user.avatar || "",
+                    };
 
-                }catch(error:any){
+                }catch (error: any) {
                     console.error("Error in authorize:", error);
-                    throw new Error(error.message || "Authorization failed");
+                    return null;
                 }
             }
+
         })
     ],
     callbacks:{
@@ -71,8 +79,8 @@ export const authOptions : NextAuthOptions = {
         },
     },
     pages:{
-        signIn: "/auth/login",
-        error: "/auth/login",
+        signIn: "/signin",
+        error: "/signin",
     },
     session: {
         strategy: "jwt",
@@ -80,3 +88,4 @@ export const authOptions : NextAuthOptions = {
     },
     secret: process.env.NEXTAUTH_SECRET,
 }
+

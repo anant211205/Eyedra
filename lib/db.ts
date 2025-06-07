@@ -6,10 +6,10 @@ if(!MONGODB_URI){
     throw new Error("Please define mongodb uri in env file")
 }
 
-let cached = global.mongoose ;
+let cached = (global as any).mongoose ;
 
 if(!cached){
-    cached = global.mongoose = {
+    cached = (global as any).mongoose = {
         conn : null ,
         promise : null
     }; 

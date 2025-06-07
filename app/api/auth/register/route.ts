@@ -44,7 +44,7 @@ export async function POST(request: Request) {
             const avatarRes = await fetch(uiAvatarUrl);
             const avatarBuffer = Buffer.from(await avatarRes.arrayBuffer());
             const result = await uploadToCloudinary(avatarBuffer, `${username}-default.png`, "image/png");
-                imageUrl = result.secure_url;
+            imageUrl = result.secure_url;
         }
 
         const newUser = new User({

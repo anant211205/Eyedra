@@ -1,10 +1,12 @@
+"use client"
 
 import React from "react";
+import FloatingActionButtons from "@/components/floatingAirButton";
 
 export default function DashboardPage() {
     return (
         <div>
-            <h1>Welcome to your feed</h1>
+            <FloatingActionButtons/>
         </div>
     );
 }

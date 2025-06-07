@@ -88,7 +88,7 @@ export default function SignInForm() {
             } else if (result?.ok) {
                 setMessage({ type: "success", text: "Welcome back!" })
                 const session = await getSession()
-                if (session) {
+                if(session){
                     router.push('/feed') 
                 }
             }

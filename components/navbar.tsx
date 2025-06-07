@@ -55,6 +55,11 @@ export default function Navbar() {
 
             {user ? (
                 <>
+
+                <Link href="/" passHref>
+                    <Button variant="contained" color="primary">About</Button>
+                </Link>
+
                 <Typography variant="body1" sx={{ color: "text.primary", display: { xs: "none", sm: "block" } }}>
                     Welcome, <span style={{ fontWeight: "bold" }}>{user.username}</span>
                 </Typography>
