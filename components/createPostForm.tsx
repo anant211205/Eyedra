@@ -102,14 +102,13 @@ export default function CreatePostModal({ open, onClose }: Props) {
         setFormData((prev) => ({ 
             ...prev, 
             [name]: value,
-            // Clear custom category when switching away from "Others"
             ...(name === "category" && value !== "Others" && { customCategory: "" })
         }));
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] || null;
-        if (file) {
+        if(file){
             setFormData((prev) => ({ ...prev, postPhoto: file }));
             setPreviewUrl(URL.createObjectURL(file));
         }
@@ -121,43 +120,34 @@ export default function CreatePostModal({ open, onClose }: Props) {
     };
 
     const handleSubmit = async () => {
-        // Validate description before submitting
         const descLength = formData.description.trim().length;
-        if (descLength < 20) {
+        if(descLength < 20){
             setMessage({ type: 'error', text: 'Description must be at least 20 characters long' });
             return;
         }
-        if (descLength > 300) {
+        if(descLength > 300){
             setMessage({ type: 'error', text: 'Description must not exceed 300 characters' });
             return;
         }
-        
         setIsSubmitting(true);
         setMessage(null);
-        
+
         const data = new FormData();
 
         for (const key in formData) {
             const val = formData[key as keyof typeof formData];
-            
-            // Handle category logic
-            if (key === "category") {
-                // If "Others" is selected, send the customCategory value as category
-                if (formData.category === "Others" && formData.customCategory) {
+            if(key === "category"){
+                if(formData.category === "Others" && formData.customCategory){
                     data.append("category", formData.customCategory);
-                } else if (formData.category !== "Others") {
-                    // Send the selected predefined category
+                }else if(formData.category !== "Others"){
                     data.append("category", val as string);
                 }
                 continue;
             }
-            
-            // Skip customCategory as we handle it above
-            if (key === "customCategory") {
+            if(key === "customCategory"){
                 continue;
             }
-            
-            if (val) data.append(key, val);
+            if(val) data.append(key, val);
         }
 
         try {
@@ -170,13 +160,12 @@ export default function CreatePostModal({ open, onClose }: Props) {
             if (!res.ok) throw new Error(json.error || "Post failed");
             
             setMessage({ type: 'success', text: 'Post created successfully!' });
-            
-            // Close modal after 2 seconds
+
             setTimeout(() => {
                 handleClose();
-            }, 2000);
+            }, 1000);
             
-        } catch (err: any) {
+        }catch(err: any){
             setMessage({ type: 'error', text: err.message || 'Something went wrong' });
         } finally {
             setIsSubmitting(false);
@@ -201,7 +190,6 @@ export default function CreatePostModal({ open, onClose }: Props) {
             </DialogTitle>
 
             <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 3 }}>
-                {/* Message Display */}
                 {message && (
                     <Box
                         sx={{
@@ -218,7 +206,7 @@ export default function CreatePostModal({ open, onClose }: Props) {
                         </Typography>
                     </Box>
                 )}
-                {/* Type Selector */}
+
                 <FormControl size="small" fullWidth>
                     <InputLabel id="type-label">Type</InputLabel>
                     <Select
@@ -234,7 +222,6 @@ export default function CreatePostModal({ open, onClose }: Props) {
                     </Select>
                 </FormControl>
 
-                {/* Category Selector */}
                 <FormControl size="small" fullWidth>
                     <InputLabel id="category-label">Category</InputLabel>
                     <Select
@@ -250,22 +237,22 @@ export default function CreatePostModal({ open, onClose }: Props) {
                                 {cat.name}
                             </MenuItem>
                         ))}
-                        <MenuItem value="Others">Others</MenuItem>
                     </Select>
                 </FormControl>
 
-                {/* Custom Category TextField */}
-                {formData.category === "Others" && (
-                    <TextField
-                        name="customCategory"
-                        label="Custom Category"
-                        value={formData.customCategory}
-                        onChange={handleInputChange}
-                        size="small"
-                        fullWidth
-                        placeholder="Enter your custom category"
-                    />
-                )}
+                {
+                    formData.category === "Others" && (
+                        <TextField
+                            name="customCategory"
+                            label="Custom Category"
+                            value={formData.customCategory}
+                            onChange={handleInputChange}
+                            size="small"
+                            fullWidth
+                            placeholder="Enter your custom category"
+                        />
+                    )
+                }
 
                 <TextField
                     name="location"
