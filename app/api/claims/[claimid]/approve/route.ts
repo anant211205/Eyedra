@@ -8,7 +8,7 @@ import Post, { PostStatus } from "@/models/Posts";
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { claimid: string } }
+    { params }: { params: Promise<{ claimid: string }>  }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function POST(
             );
         }
 
-        const { claimid } = params;
+        const { claimid } = await params;
         if (!mongoose.Types.ObjectId.isValid(claimid)) {
             return NextResponse.json(
                 { message: "Invalid claim ID" },
