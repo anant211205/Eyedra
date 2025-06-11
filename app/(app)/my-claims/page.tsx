@@ -18,7 +18,7 @@ type MyClaim = {
         user_id: {
             username: string;
         };
-    } | null; // Allow null for deleted posts
+    } | null; 
     createdAt: string;
     status: ClaimStatus;
     message: string;
@@ -58,9 +58,7 @@ export default function MyClaimsPage() {
         fetchMyClaims();
     }, []);
 
-    // Helper function to generate a title from post data
     const generatePostTitle = (post: MyClaim['post_id']) => {
-        // Handle deleted posts
         if (!post) {
             return 'Deleted Post';
         }
@@ -71,9 +69,7 @@ export default function MyClaimsPage() {
         return `${typeText}: ${preview}`;
     };
 
-    // Helper function to format additional info
     const formatAdditionalInfo = (post: MyClaim['post_id']) => {
-        // Handle deleted posts
         if (!post) {
             return 'Post was deleted - You can still delete this claim';
         }
@@ -85,22 +81,18 @@ export default function MyClaimsPage() {
         return [location, date, owner].filter(Boolean).join(' • ');
     };
 
-    // Handle claim deletion with proper error handling
     const handleClaimDelete = async (claimid: string) => {
         try {
             setDeleteError(null);
             
-            // Make the actual DELETE request
             const res = await fetch(`/api/myClaims/${claimid}`, {
                 method: 'DELETE',
             });
 
             if (res.ok) {
-                // Remove from local state only after successful deletion
                 setClaims(prevClaims => prevClaims.filter(claim => claim._id !== claimid));
                 setDeleteSuccess(true);
             } else {
-                // Handle error response
                 let errorMessage = 'Failed to delete claim';
                 
                 try {
@@ -124,7 +116,6 @@ export default function MyClaimsPage() {
         }
     };
 
-    // Handle snackbar close
     const handleSnackbarClose = () => {
         setDeleteSuccess(false);
     };
@@ -173,14 +164,12 @@ export default function MyClaimsPage() {
                             claimedAt={claim.createdAt}
                             status={claim.status.toLowerCase() as 'pending' | 'approved' | 'denied'}
                             onDelete={handleClaimDelete}
-                            // Add a prop to indicate if post is deleted (you may need to add this to ClaimCard)
                             isPostDeleted={claim.post_id === null}
                         />
                     ))
                 )}
             </Container>
 
-            {/* Success Snackbar */}
             <Snackbar
                 open={deleteSuccess}
                 autoHideDuration={4000}
@@ -196,7 +185,6 @@ export default function MyClaimsPage() {
                 </Alert>
             </Snackbar>
 
-            {/* Error Snackbar */}
             <Snackbar
                 open={!!deleteError}
                 autoHideDuration={6000}
