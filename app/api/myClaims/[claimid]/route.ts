@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { claimid: string } }
+    { params }: { params: Promise<{ claimid: string }>  }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -17,9 +17,9 @@ export async function DELETE(
             );
         }
 
-        const claimId = params.claimid;
+        const { claimid } = await params;
 
-        if (!claimId) {
+        if (!claimid) {
             return NextResponse.json(
                 { message: "Claim ID is required" },
                 { status: 400 }
@@ -27,7 +27,7 @@ export async function DELETE(
         }
 
         await connectToDatabase();
-        const claim = await Claim.findById(claimId);
+        const claim = await Claim.findById(claimid);
                 
         if (!claim) {
             return NextResponse.json(
@@ -41,7 +41,7 @@ export async function DELETE(
                 { status: 403 }
             );
         }
-        await Claim.findByIdAndDelete(claimId);
+        await Claim.findByIdAndDelete(claimid);
 
         return NextResponse.json({
             success: true,
