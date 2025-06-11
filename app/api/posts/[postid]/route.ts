@@ -45,12 +45,12 @@ interface MediaDocument {
 
 export async function GET(
     request: Request,
-    { params }: { params: { postid: string } }
+    { params }: { params: Promise<{ postid: string }>  }
 ) {
     await connectToDatabase();
     
     try {
-        const { postid } = params;
+        const { postid } = await params;
 
         if (!mongoose.Types.ObjectId.isValid(postid)) {
             return NextResponse.json(
@@ -163,7 +163,7 @@ export async function GET(
 
 export async function PUT(
     request: Request,
-    { params }: { params: { postId: string } }
+    { params }: { params: Promise<{ postid: string }>  }
 ) {
     await connectToDatabase();
     const session = await getServerSession(authOptions);
@@ -177,16 +177,16 @@ export async function PUT(
     }
 
     try {
-        const { postId } = params;
+        const { postid } = await params;
 
-        if (!mongoose.Types.ObjectId.isValid(postId)) {
+        if (!mongoose.Types.ObjectId.isValid(postid)) {
             return NextResponse.json(
                 { error: 'Invalid post ID format' },
                 { status: 400 }
             );
         }
 
-        const existingPost = await Post.findById(postId);
+        const existingPost = await Post.findById(postid);
         
         if (!existingPost) {
             return NextResponse.json(
@@ -227,7 +227,7 @@ export async function PUT(
         }
 
         const updatedPost = await Post.findByIdAndUpdate(
-            postId,
+            postid,
             updateData,
             { new: true, runValidators: true }
         ).populate('user_id', 'name email image')
@@ -253,7 +253,7 @@ export async function PUT(
 
 export async function DELETE(
     request: Request,
-    { params }: { params: { postid: string } }
+    { params }: { params: Promise<{ postid: string }>  }
 ) {
     await connectToDatabase();
     const session = await getServerSession(authOptions);
@@ -267,7 +267,7 @@ export async function DELETE(
     }
 
     try {
-        const { postid } = params;
+        const { postid } = await params;
 
         if (!mongoose.Types.ObjectId.isValid(postid)) {
             return NextResponse.json(

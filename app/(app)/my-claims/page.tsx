@@ -152,7 +152,7 @@ export default function MyClaimsPage() {
                     <Typography
                         sx={{ textAlign: 'center', marginTop: 4 }}
                     >
-                        You haven't made any claims yet.
+                        You have not made any claims yet.
                     </Typography>
                 ) : (
                     claims.map(claim => (

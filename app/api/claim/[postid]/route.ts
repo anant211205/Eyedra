@@ -9,7 +9,7 @@ import { authOptions } from "@/lib/auth";
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { postid: string } }
+    { params }: { params: Promise<{ postid: string }>  }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -20,7 +20,7 @@ export async function POST(
             );
         }
 
-        const { postid } = params;
+        const { postid } = await params;
 
         if (!mongoose.Types.ObjectId.isValid(postid)) {
             return NextResponse.json(
@@ -172,13 +172,17 @@ export async function POST(
             type: post.type === PostType.FOUND ? "ownership_request" : "finder_report"
         });
 
-    } catch (error: any) {
-        console.error("Error creating claim:", error);
-        if (error.code === 11000) {
-            return NextResponse.json(
-                { message: "You have already made a claim for this post" }, 
-                { status: 400 }
-            );
+    } catch (error: unknown) {
+    console.error("Error creating claim:", error);
+
+        if (error && typeof error === "object" && "code" in error) {
+            const err = error as { code?: number };
+            if (err.code === 11000) {
+                return NextResponse.json(
+                    { message: "You have already made a claim for this post" }, 
+                    { status: 400 }
+                );
+            }
         }
         return NextResponse.json(
             { message: "Internal server error" },
@@ -189,7 +193,7 @@ export async function POST(
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { postid: string } }
+    { params }: { params: Promise<{ postid: string }>  }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -200,7 +204,7 @@ export async function GET(
             );
         }
 
-        const { postid } = params;
+        const { postid } = await params;
 
         if (!mongoose.Types.ObjectId.isValid(postid)) {
             return NextResponse.json(
@@ -235,7 +239,7 @@ export async function GET(
             post_type: post.type
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error fetching claims:", error);
         return NextResponse.json(
             { message: "Internal server error" },

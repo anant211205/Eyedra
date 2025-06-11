@@ -8,7 +8,7 @@ import Post from "@/models/Posts";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { postid: string } }
+    { params }: { params: Promise<{ postid: string }>  }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function GET(
             );
         }
 
-        const { postid } = params;
+        const { postid } = await params;
         if (!mongoose.Types.ObjectId.isValid(postid)) {
             return NextResponse.json(
                 { message: "Invalid post ID" },

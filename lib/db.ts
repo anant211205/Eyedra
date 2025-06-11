@@ -6,10 +6,10 @@ if(!MONGODB_URI){
     throw new Error("Please define mongodb uri in env file")
 }
 
-let cached = (global as any).mongoose ;
+let cached = (global).mongoose ;
 
 if(!cached){
-    cached = (global as any).mongoose = {
+    cached = (global).mongoose = {
         conn : null ,
         promise : null
     }; 
@@ -33,7 +33,7 @@ export async function connectToDatabase(){
         cached.conn = await cached.promise ;
     }catch(error){
         cached.promise = null ;
-        throw new Error("Check database file");
+        throw new Error("Check database file" + error);
     }
 
     return cached.conn ;

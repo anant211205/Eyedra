@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function POST(
     request: Request,
-    { params }: { params: { postid: string } }
+    { params }: { params: Promise<{ postid: string }>  }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -17,7 +17,7 @@ export async function POST(
             );
         }
 
-        const { postid } = params;
+        const { postid } = await params;
         
         const body = await request.json();
         const userId = body.userId || session.user._id;

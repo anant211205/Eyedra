@@ -8,6 +8,20 @@ import { authOptions } from '@/lib/auth';
 import { User } from 'next-auth';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 
+interface NewPostData {
+    user_id?: string;
+    type: PostType;
+    location: string;
+    date: Date;
+    description: string;
+    status: string;
+    claimed_by: string | null;
+    category_id?: string | null;
+    customCategory?: string | null;
+}
+
+
+
 export async function POST(request: Request) {
     await connectToDatabase();
     const session = await getServerSession(authOptions);
@@ -72,7 +86,7 @@ export async function POST(request: Request) {
             },
         });
 
-        const newPostData : any = {
+        const newPostData : NewPostData = {
             user_id: user?._id,
             type,
             location,

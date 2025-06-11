@@ -8,14 +8,10 @@ import {
     Stack,
     Card,
     CardContent,
-    Chip
 } from "@mui/material";
-import { 
-    Search, 
+import {
     PostAdd, 
     Security, 
-    Speed,
-    CheckCircle,
     FindInPage
 } from "@mui/icons-material";
 import Link from "next/link";
@@ -37,12 +33,6 @@ export default function HomePage() {
             title: "Secure Claims",
             description: "Safe verification process to ensure items reach their rightful owners."
         },
-    ];
-
-    const stats = [
-        { number: "1,200+", label: "Items Returned" },
-        { number: "500+", label: "Active Users" },
-        { number: "98%", label: "Success Rate" }
     ];
 
     return (

@@ -9,7 +9,7 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { postid: string } }
+    { params }: { params: Promise<{ postid: string }>  }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -20,7 +20,7 @@ export async function POST(
             );
         }
 
-        const { postid } = params;
+        const { postid } = await params;
         if (!mongoose.Types.ObjectId.isValid(postid)) {
             return NextResponse.json(
                 { message: "Invalid post ID" }, 
@@ -152,14 +152,17 @@ export async function POST(
             claim: populatedClaim
         });
 
-    } catch (error: any) {
-        console.error("Error creating direct claim:", error);
-        if (error.code === 11000) {
+    } catch (error: unknown) {
+    console.error("Error creating direct claim:", error);
+    if (error && typeof error === "object" && "code" in error) {
+        const err = error as { code?: number };
+        if (err.code === 11000) {
             return NextResponse.json(
                 { message: "You have already made a claim for this post" }, 
                 { status: 400 }
             );
         }
+    }
         return NextResponse.json(
             { message: "Internal server error" },
             { status: 500 }
