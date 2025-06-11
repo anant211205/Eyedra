@@ -6,7 +6,7 @@ import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
 import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
-import CreatePostModal from "./createPostForm";
+import CreatePostModal from "../post/createPostForm";
 import { useState } from "react";
 
 const StyledFab = styled(Fab)(({ theme }) => ({

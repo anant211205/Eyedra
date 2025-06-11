@@ -48,13 +48,19 @@ export default function Navbar() {
         <Toolbar sx={{ justifyContent: "space-between" }}>
             
                 <Typography variant="h6" fontWeight="bold" sx={{ cursor: "pointer", color: "primary.main" }}>
-                    EYEDRA
+                    <Link href="/feed" passHref>
+                        EYEDRA    
+                    </Link>
                 </Typography>
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
 
             {user ? (
                 <>
+
+                <Link href="/my-claims" passHref>
+                    <Button variant="contained" color="primary">My Claims</Button>
+                </Link>
 
                 <Link href="/" passHref>
                     <Button variant="contained" color="primary">About</Button>
@@ -90,19 +96,6 @@ export default function Navbar() {
                     anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
                     transformOrigin={{ horizontal: "right", vertical: "top" }}
                 >
-                    <MenuItem onClick={handleMenuClose} component={Link} href="/dashboard">
-                        <ListItemIcon>
-                            <Dashboard fontSize="small" />
-                        </ListItemIcon>
-                        Dashboard
-                    </MenuItem>
-                    <MenuItem onClick={handleMenuClose} component={Link} href="/settings">
-                        <ListItemIcon>
-                            <Settings fontSize="small" />
-                        </ListItemIcon>
-                        Settings
-                    </MenuItem>
-                    <Divider />
                     <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
                     <ListItemIcon>
                         <Logout fontSize="small" sx={{ color: "error.main" }} />

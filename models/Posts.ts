@@ -2,7 +2,7 @@ import mongoose, {model , models , Schema} from "mongoose";
 
 export enum PostStatus{
     UNCLAIMED = "unclaimed",
-    CLAIM_IN_PROGRESS = "claim_in_progress",
+    CLAIM_IN_PROGRESS = "claim_in_progress", 
     CLAIMED = "claimed",
 }
 
@@ -22,6 +22,7 @@ export interface IPosts{
     description: string ;
     status: PostStatus | "unclaimed";
     claimed_by?: mongoose.Types.ObjectId;
+    found_by?: mongoose.Types.ObjectId;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -51,6 +52,7 @@ const postSchema = new Schema<IPosts>(
         location:{
             type: String,
             required: true,
+            trim: true,
         },
         date:{
             type: Date,
@@ -59,6 +61,7 @@ const postSchema = new Schema<IPosts>(
         description:{
             type: String,
             required: true,
+            trim: true,
         },
         status:{
             type: String,
@@ -71,10 +74,28 @@ const postSchema = new Schema<IPosts>(
             ref: "User",
             default: null,
         },
+        found_by:{
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+        }
     },{
         timestamps: true,
     }
 )
+
+postSchema.index({ type: 1 });
+postSchema.index({ category_id: 1 });
+postSchema.index({ user_id: 1 });
+postSchema.index({ date: 1 });
+postSchema.index({ status: 1 });
+postSchema.index({ createdAt: -1 });
+
+postSchema.index({ 
+    description: "text", 
+    location: "text", 
+    customCategory: "text" 
+});
 
 const Post = models?.Posts || model<IPosts>("Posts", postSchema);
 
