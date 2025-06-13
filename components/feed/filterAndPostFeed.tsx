@@ -50,16 +50,49 @@ export default function PaginatedPosts() {
         onlyMine: false,
     });
 
+    const isValidPost = (post: any): post is Post => {
+        return (
+            post &&
+            typeof post === 'object' &&
+            post._id &&
+            typeof post._id === 'string' &&
+            post.user_id &&
+            typeof post.user_id === 'object' &&
+            post.user_id._id &&
+            typeof post.user_id._id === 'string' &&
+            post.type &&
+            post.description &&
+            post.location &&
+            post.date
+        );
+    };
+    const isValidCategory = (category: any): category is { _id: string; name: string } => {
+        return (
+            category &&
+            typeof category === 'object' &&
+            category._id &&
+            typeof category._id === 'string' &&
+            category.name &&
+            typeof category.name === 'string'
+        );
+    };
+
     const fetchCurrentUser = async () => {
         try {
             const res = await fetch("/api/me"); 
             if (res.ok) {
                 const userData = await res.json();
-                // console.log('Current user data:', userData);
-                setCurrentUserId(userData.user?.id || "");
+                console.log('Current user data:', userData);
+                
+                const userId = userData?.user?.id || userData?.user?._id || userData?._id || "";
+                setCurrentUserId(userId);
+            } else {
+                console.warn('Failed to fetch current user:', res.status);
+                setCurrentUserId("");
             }
         } catch(error) {
             console.error('Error fetching current user:', error);
+            setCurrentUserId("");
         }
     };
 
@@ -76,25 +109,40 @@ export default function PaginatedPosts() {
                 }
             });
 
-            // console.log('Fetching with params:', queryParams.toString());
+            console.log('Fetching with params:', queryParams.toString());
 
             const res = await fetch(`/api/get-all-posts?${queryParams.toString()}`);
             
             if (!res.ok) {
                 throw new Error(`HTTP error! status: ${res.status}`);
             }
+            
             const data = await res.json();
+            console.log('Raw API response:', data);
             
-            // console.log('Received data:', data);
-            // console.log('API Debug info:', data.debug);
+            const rawPosts = Array.isArray(data.posts) ? data.posts : [];
+            const validPosts = rawPosts.filter((post: any, index: number) => {
+                const isValid = isValidPost(post);
+                if (!isValid) {
+                    console.warn(`Invalid post at index ${index}:`, post);
+                }
+                return isValid;
+            });
+
+            console.log(`Filtered ${validPosts.length} valid posts out of ${rawPosts.length} total`);
             
-            setPosts(data.posts || []);
-            setTotalPages(data.totalPages || 1);
+            setPosts(validPosts);
+            setTotalPages(Math.max(1, data.totalPages || 1));
+            
+            if (validPosts.length === 0 && rawPosts.length > 0) {
+                showSnackbar('Some posts could not be displayed due to data issues', 'error');
+            }
+            
         } catch (error) {
             console.error('Error fetching posts:', error);
             setPosts([]);
             setTotalPages(1);
-            showSnackbar('Error fetching posts', 'error');
+            showSnackbar('Error fetching posts. Please try again.', 'error');
         } finally {
             setLoading(false);
         }
@@ -106,117 +154,170 @@ export default function PaginatedPosts() {
             if (!res.ok) {
                 throw new Error(`HTTP error! status: ${res.status}`);
             }
+            
             const data = await res.json();
-            setCategories(data.categories || []);
+            console.log('Raw categories response:', data);
+            
+            // Validate and filter categories
+            const rawCategories = Array.isArray(data.categories) ? data.categories : [];
+            const validCategories = rawCategories.filter((category: any, index: number) => {
+                const isValid = isValidCategory(category);
+                if (!isValid) {
+                    console.warn(`Invalid category at index ${index}:`, category);
+                }
+                return isValid;
+            });
+
+            console.log(`Filtered ${validCategories.length} valid categories out of ${rawCategories.length} total`);
+            setCategories(validCategories);
+            
         } catch (error) {
             console.error('Error fetching categories:', error);
             setCategories([]);
+            showSnackbar('Error fetching categories', 'error');
         }
     };
 
     const handleClaim = async (postId: string) => {
-    try {
-        const res = await fetch(`/api/posts/${postId}/claims`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        if (!postId || typeof postId !== 'string') {
+            showSnackbar('Invalid post ID', 'error');
+            return;
+        }
 
-        if (res.ok){
-            const contentType = res.headers.get('content-type');
-            let responseData = null;
-            
-            if (contentType && contentType.includes('application/json')) {
-                const text = await res.text();
-                if (text) {
-                    responseData = JSON.parse(text);
-                }
-            }
-            showSnackbar('Post claimed successfully', 'success');
-            fetchPosts();
-        } else {
-            let errorMessage = 'Failed to claim post';
-            try {
+        try {
+            const res = await fetch(`/api/posts/${postId}/claims`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (res.ok){
                 const contentType = res.headers.get('content-type');
+                let responseData = null;
+                
                 if (contentType && contentType.includes('application/json')) {
                     const text = await res.text();
                     if (text) {
-                        const error = JSON.parse(text);
-                        errorMessage = error.message || errorMessage;
+                        try {
+                            responseData = JSON.parse(text);
+                        } catch (parseError) {
+                            console.warn('Could not parse claim response:', parseError);
+                        }
                     }
                 }
-            } catch (parseError) {
-                console.error('Error parsing error response:', parseError);
+                showSnackbar('Post claimed successfully', 'success');
+                fetchPosts();
+            } else {
+                let errorMessage = 'Failed to claim post';
+                try {
+                    const contentType = res.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const text = await res.text();
+                        if (text) {
+                            const error = JSON.parse(text);
+                            errorMessage = error.message || errorMessage;
+                        }
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing error response:', parseError);
+                }
+                
+                showSnackbar(errorMessage, 'error');
             }
-            
-            showSnackbar(errorMessage, 'error');
+        } catch (error) {
+            console.error('Error claiming post:', error);
+            showSnackbar('Network error while claiming post', 'error');
         }
-    } catch (error) {
-        console.error('Error claiming post:', error);
-        // showSnackbar('Error claiming post', 'error');
-    }
-};
+    };
 
     const handleDeleteConfirm = (postId: string) => {
+        if (!postId || typeof postId !== 'string') {
+            showSnackbar('Invalid post ID', 'error');
+            return;
+        }
         setDeleteDialog({ open: true, postId });
     };
 
     const handleDelete = async () => {
-    try {
-        const res = await fetch(`/api/posts/${deleteDialog.postId}`, {
-            method: 'DELETE',
-        });
-
-        if (res.ok) {
-            showSnackbar('Post deleted successfully', 'success');
-            setPosts(posts.filter(post => post._id !== deleteDialog.postId));
-            setDeleteDialog({ open: false, postId: "" });
-        } else {
-            let errorMessage = 'Failed to delete post';
-            try {
-                const contentType = res.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    const text = await res.text();
-                    if (text) {
-                        const error = JSON.parse(text);
-                        errorMessage = error.message || errorMessage;
-                    }
-                }
-            } catch (parseError) {
-                console.error('Error parsing error response:', parseError);
-            }
-            
-            showSnackbar(errorMessage, 'error');
+        const { postId } = deleteDialog;
+        
+        if (!postId) {
+            showSnackbar('Invalid post ID', 'error');
+            return;
         }
-    } catch (error) {
-        console.error('Error deleting post:', error);
-        showSnackbar('Error deleting post', 'error');
-    }
-};
 
-    const handleShare = async (post: Post) => {
         try {
-            if (navigator.share) {
-                await navigator.share({
-                    title: `${post.type.charAt(0).toUpperCase() + post.type.slice(1)} Item`,
-                    text: post.description,
-                    url: `${window.location.origin}/post/${post._id}`,
-                });
-            } else {
-                await navigator.clipboard.writeText(
-                    `Check out this ${post.type} item: ${post.description} - ${window.location.origin}/post/${post._id}`
+            const res = await fetch(`/api/posts/${postId}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                showSnackbar('Post deleted successfully', 'success');
+                setPosts(prevPosts => 
+                    prevPosts.filter(post => 
+                        post && post._id && post._id !== postId
+                    )
                 );
-                showSnackbar('Link copied to clipboard', 'success');
+                setDeleteDialog({ open: false, postId: "" });
+            } else {
+                let errorMessage = 'Failed to delete post';
+                try {
+                    const contentType = res.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const text = await res.text();
+                        if (text) {
+                            const error = JSON.parse(text);
+                            errorMessage = error.message || errorMessage;
+                        }
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing error response:', parseError);
+                }
+                
+                showSnackbar(errorMessage, 'error');
             }
         } catch (error) {
-            console.error('Error sharing post:', error);
-            showSnackbar('Error sharing post', 'error');
+            console.error('Error deleting post:', error);
+            showSnackbar('Network error while deleting post', 'error');
+        }
+    };
+
+    const handleShare = async (post: Post) => {
+        if (!post || !post._id) {
+            showSnackbar('Invalid post data', 'error');
+            return;
+        }
+
+        try {
+            const shareData = {
+                title: `${post.type?.charAt(0).toUpperCase() + post.type?.slice(1) || 'Item'}`,
+                text: post.description || 'Check out this item',
+                url: `${window.location.origin}/post/${post._id}`,
+            };
+
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                const shareText = `${shareData.text} - ${shareData.url}`;
+                await navigator.clipboard.writeText(shareText);
+                showSnackbar('Link copied to clipboard', 'success');
+            }
+        } catch (error: unknown) {
+            if (typeof error === "object" && error !== null && "name" in error && (error as any).name !== 'AbortError') { 
+                console.error('Error sharing post:', error);
+                showSnackbar('Error sharing post', 'error');
+            }
         }
     };
 
     const handleEdit = (post: Post) => {
+        if (!post || !post._id) {
+            showSnackbar('Invalid post data', 'error');
+            return;
+        }
         console.log('Edit post:', post);
+        // Implement your edit logic here
     };
 
     const showSnackbar = (message: string, severity: 'success' | 'error') => {
@@ -261,6 +362,8 @@ export default function PaginatedPosts() {
         setPage(1);
     };
 
+    const validPostsForRender = posts.filter(post => isValidPost(post));
+
     return (
         <Box sx={{ maxWidth: 800, mx: "auto", mt: 4, px: 2 }}>
             <Stack direction="column" spacing={2} mb={4}>
@@ -288,11 +391,14 @@ export default function PaginatedPosts() {
                             label="Category"
                         >
                             <MenuItem value="">All</MenuItem>
-                            {categories.map((cat) => (
-                                <MenuItem key={cat._id} value={cat._id}>
-                                    {cat.name}
-                                </MenuItem>
-                            ))}
+                            {categories
+                                .filter(cat => isValidCategory(cat))
+                                .map((cat) => (
+                                    <MenuItem key={cat._id} value={cat._id}>
+                                        {cat.name}
+                                    </MenuItem>
+                                ))
+                            }
                         </Select>
                     </FormControl>
                 </Stack>
@@ -354,12 +460,12 @@ export default function PaginatedPosts() {
                 <Box textAlign="center" mt={4}>
                     <CircularProgress />
                 </Box>
-            ) : posts.length === 0 ? (
+            ) : validPostsForRender.length === 0 ? (
                 <Typography variant="body1" align="center" mt={4}>
                     No posts found.
                 </Typography>
             ) : (
-                posts.map((post) => (
+                validPostsForRender.map((post) => (
                     <PostCard 
                         key={post._id} 
                         post={post}
@@ -388,7 +494,7 @@ export default function PaginatedPosts() {
             {totalPages > 0 && (
                 <Box mt={2} textAlign="center">
                     <Typography variant="caption" color="text.secondary">
-                        Page {page} of {totalPages} • Total posts: {posts.length}
+                        Page {page} of {totalPages} • Showing {validPostsForRender.length} posts
                     </Typography>
                 </Box>
             )}

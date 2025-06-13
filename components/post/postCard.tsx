@@ -80,6 +80,11 @@ export default function PostCard({
     onEdit,
     currentUserId,
 }: PostCardProps) {
+    // Early return if post is invalid
+    if (!post || !post._id || !post.user_id || !post.user_id._id) {
+        console.warn('Invalid post data received:', post);
+        return null;
+    }
 
     const router = useRouter();
 
@@ -91,14 +96,19 @@ export default function PostCard({
 
     const menuOpen = Boolean(menuAnchor);
 
-    const isOwner = currentUserId === post.user_id._id;
+    // Safe property access with fallbacks
+    const isOwner = currentUserId === post.user_id?._id;
     const isClaimed = localPostStatus === PostStatus.CLAIMED;
     const isClaimInProgress = localPostStatus === PostStatus.CLAIM_IN_PROGRESS;
     const category = post.category_id?.name || post.customCategory || "Other";
+    
+    // Safe username access
+    const username = post.user_id?.username || 'Unknown User';
+    const userAvatar = post.user_id?.avatar || '';
 
     useEffect(() => {
         const checkUserClaim = async () => {
-            if (!currentUserId || isOwner || isClaimed) return;
+            if (!currentUserId || isOwner || isClaimed || !post._id) return;
 
             try {
                 const response = await fetch(`/api/claim/${post._id}/check`, {
@@ -124,8 +134,9 @@ export default function PostCard({
         };
 
         checkUserClaim();
-    }, [currentUserId, post._id, isOwner, isClaimed, localPostStatus ?? null]);
+    }, [currentUserId, post._id, isOwner, isClaimed, localPostStatus]);
 
+    // Rest of your component methods remain the same...
     const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
         event.stopPropagation();
         setMenuAnchor(event.currentTarget);
@@ -169,12 +180,17 @@ export default function PostCard({
         router.push(`/posts/${post._id}/claims`);
     };
 
-    const formatDate = (dateString: string) =>
-        new Date(dateString).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-        });
+    const formatDate = (dateString: string) => {
+        try {
+            return new Date(dateString).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+            });
+        } catch (error) {
+            return 'Invalid date';
+        }
+    };
 
     const getTypeColor = (): "success" | "error" =>
         post.type === PostType.FOUND ? "success" : "error";
@@ -198,7 +214,7 @@ export default function PostCard({
     };
 
     const displayType =
-        post.type.charAt(0).toUpperCase() + post.type.slice(1).toLowerCase();
+        post.type?.charAt(0).toUpperCase() + post.type?.slice(1).toLowerCase() || 'Unknown';
 
     const canClaim = !isOwner && !isClaimed && !userHasClaimed;
 
@@ -240,17 +256,17 @@ export default function PostCard({
                     >
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                             <Avatar
-                                src={post.user_id.avatar || ""}
+                                src={userAvatar}
                                 sx={{ width: 40, height: 40 }}
                             >
-                                {post.user_id.username.charAt(0).toUpperCase()}
+                                {username.charAt(0).toUpperCase()}
                             </Avatar>
                             <Box>
                                 <Typography variant="subtitle2" fontWeight={600}>
-                                    {post.user_id.username}
+                                    {username}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                    {formatDate(post.createdAt)}
+                                    {formatDate(post.createdAt || post.date || '')}
                                 </Typography>
                             </Box>
                         </Box>
@@ -279,15 +295,6 @@ export default function PostCard({
                                 transformOrigin={{ horizontal: "right", vertical: "top" }}
                                 anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
                             >
-                                {/* {isOwner && (
-                                    <MenuItem onClick={handleEdit}>
-                                        <ListItemIcon>
-                                            <Edit fontSize="small" />
-                                        </ListItemIcon>
-                                        <ListItemText>Edit Post</ListItemText>
-                                    </MenuItem>
-                                )} */}
-
                                 {isOwner && (isClaimInProgress || claimsCount > 0) && (
                                     <MenuItem onClick={handleViewClaims}>
                                         <ListItemIcon>
@@ -351,7 +358,7 @@ export default function PostCard({
                         component="img"
                         height="180"
                         image={post.media.postImageUrl}
-                        alt={`${post.type} item`}
+                        alt={`${post.type || 'unknown'} item`}
                         sx={{
                             objectFit: "cover",
                             borderRadius: 1,
@@ -363,20 +370,20 @@ export default function PostCard({
 
                 <CardContent sx={{ pt: 2 }}>
                     <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.6 }}>
-                        {post.description}
+                        {post.description || 'No description available'}
                     </Typography>
 
                     <Box sx={{ display: "flex", gap: 3, mb: 2, flexWrap: "wrap" }}>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                             <LocationOn color="action" fontSize="small" />
                             <Typography variant="body2" color="text.secondary">
-                                {post.location}
+                                {post.location || 'Location not specified'}
                             </Typography>
                         </Box>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                             <CalendarToday color="action" fontSize="small" />
                             <Typography variant="body2" color="text.secondary">
-                                {formatDate(post.date)}
+                                {formatDate(post.date || '')}
                             </Typography>
                         </Box>
                     </Box>
@@ -392,7 +399,6 @@ export default function PostCard({
                             gap: 1,
                         }}
                     >
-
                         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                             {canClaim && (
                                 <Button
@@ -434,7 +440,7 @@ export default function PostCard({
                 onClose={() => setClaimOpen(false)}
                 postid={post._id}
                 postType={post.type}
-                postedBy={post.user_id.username}
+                postedBy={username}
                 onClaimSuccess={handleClaimSuccess}
             />
         </>
