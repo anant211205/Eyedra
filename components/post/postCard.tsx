@@ -80,7 +80,6 @@ export default function PostCard({
     onEdit,
     currentUserId,
 }: PostCardProps) {
-    // Early return if post is invalid
     if (!post || !post._id || !post.user_id || !post.user_id._id) {
         console.warn('Invalid post data received:', post);
         return null;
@@ -96,13 +95,11 @@ export default function PostCard({
 
     const menuOpen = Boolean(menuAnchor);
 
-    // Safe property access with fallbacks
     const isOwner = currentUserId === post.user_id?._id;
     const isClaimed = localPostStatus === PostStatus.CLAIMED;
     const isClaimInProgress = localPostStatus === PostStatus.CLAIM_IN_PROGRESS;
     const category = post.category_id?.name || post.customCategory || "Other";
     
-    // Safe username access
     const username = post.user_id?.username || 'Unknown User';
     const userAvatar = post.user_id?.avatar || '';
 
@@ -136,7 +133,6 @@ export default function PostCard({
         checkUserClaim();
     }, [currentUserId, post._id, isOwner, isClaimed, localPostStatus]);
 
-    // Rest of your component methods remain the same...
     const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
         event.stopPropagation();
         setMenuAnchor(event.currentTarget);

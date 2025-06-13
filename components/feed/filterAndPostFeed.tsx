@@ -158,7 +158,6 @@ export default function PaginatedPosts() {
             const data = await res.json();
             console.log('Raw categories response:', data);
             
-            // Validate and filter categories
             const rawCategories = Array.isArray(data.categories) ? data.categories : [];
             const validCategories = rawCategories.filter((category: any, index: number) => {
                 const isValid = isValidCategory(category);
@@ -317,7 +316,6 @@ export default function PaginatedPosts() {
             return;
         }
         console.log('Edit post:', post);
-        // Implement your edit logic here
     };
 
     const showSnackbar = (message: string, severity: 'success' | 'error') => {
